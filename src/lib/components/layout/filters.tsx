@@ -1,9 +1,10 @@
 import Search from "@/components/ui/search.tsx";
 import SearchIcon from "@mui/icons-material/Search";
+import CancelIcon from "@mui/icons-material/Cancel";
+import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import { IconButton, styled } from "@mui/material";
 import FilterByAuthor from "@/components/ui/filter.tsx";
 import useToggle from "@/hooks/useToggle.ts";
-import CancelIcon from "@mui/icons-material/Cancel";
 import useParams from "@/hooks/useParams.ts";
 
 const Trigger = styled(IconButton)`
@@ -15,7 +16,7 @@ const Trigger = styled(IconButton)`
   right: 10px;
   &[data-show] {
     top: 60px;
-    right: -30px;
+    right: -40px;
   }
   &[data-show="true"] {
     right: 10px;
@@ -63,7 +64,7 @@ const Filters = () => {
         onClick={clearFilters}
         data-show={hasFilters}
       >
-        <CancelIcon />
+        <FilterAltOffIcon />
       </Trigger>
       <Container data-show={areFiltersVisible}>
         <Close onClick={toggleFilters}>

@@ -54,7 +54,7 @@ const Footer = styled("footer")`
   bottom: 0;
   > div {
     display: flex;
-    gap: 0.5rem;
+    gap: 1rem;
     button {
       color: rgba(255, 255, 255, 0.6);
       padding: 0;
@@ -82,7 +82,7 @@ const PhotoItem: FC<{
   });
 
   const unSelect = (event: SyntheticEvent) => {
-    stopPropagation(event);
+    event.stopPropagation();
     setParams(PARAMS.PHOTO_ID, null);
   };
   const download = async () => {
@@ -145,6 +145,11 @@ const PhotoItem: FC<{
                 <FileDownloadIcon />
               )}
             </IconButton>
+            {props.isSelected && (
+              <Typography variant="body2">
+                Author: {props.photo.photographer}
+              </Typography>
+            )}
           </div>
           <Typography
             width={props.isSelected ? "100%" : "270px"}

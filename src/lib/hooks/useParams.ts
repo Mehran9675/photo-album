@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 const useParams = () => {
   const [searchParams, setSearchParams] = useState<Record<string, string>>({});
   const [params, updateSearchBar] = useSearchParams();
+
   useEffect(() => {
     parseParams();
   }, [params.toString()]);
@@ -17,7 +18,7 @@ const useParams = () => {
     setSearchParams(result);
   };
 
-  const setParams = (key: string, value: string | number) => {
+  const setParams = (key: string, value: string | number | null) => {
     const result = { ...searchParams };
     if (!value) delete result[key];
     else result[key] = value.toString();
