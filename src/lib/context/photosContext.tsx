@@ -17,6 +17,7 @@ import useFilterData from "@/hooks/useFilterData.ts";
 import usePagination from "@/hooks/usePagination.ts";
 import PhotoItem from "@/components/ui/photoItem.tsx";
 import { AnimatePresence } from "framer-motion";
+import { ROUTES } from "@/constants/routes.ts";
 
 interface PhotosContext {
   renderPhotos: (data: ImageDetails[]) => ReactNode[];
@@ -46,6 +47,7 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
     defaultValue: [],
   });
   const isSearching = !!(params[PARAMS.SEARCH] || params[PARAMS.AUTHOR_ID]);
+  const isVeiwingFavorites = location.pathname.endsWith(ROUTES.FAVORITES);
 
   const selectedPhoto = useMemo(() => {
     if (!response) return null;
@@ -53,17 +55,6 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
       (photo) => photo.id.toString() === params[PARAMS.PHOTO_ID]
     )[0];
   }, [params, response]);
-
-  const authors = useMemo(() => {
-    const ids = [];
-    const results = [];
-    for (const photo of response) {
-      if (!ids.includes(photo.photographer_id))
-        results.push({ name: photo.photographer, id: photo.photographer_id });
-      ids.push(photo.photographer_id);
-    }
-    return results;
-  }, [response]);
 
   const allFavorites = useMemo(
     () => response.filter((photo) => favoritesCache.includes(photo.id)),
@@ -75,7 +66,23 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
       photo.alt
         .toLowerCase()
         .includes((params[PARAMS.SEARCH] || "").toLowerCase()),
+    (photo) =>
+      params[PARAMS.AUTHOR_ID]
+        ? photo.photographer_id.toString() === params[PARAMS.AUTHOR_ID]
+        : true,
   ]);
+
+  const authors = useMemo(() => {
+    const ids = [];
+    const results = [];
+    const source = isVeiwingFavorites ? allFavorites : response;
+    for (const photo of source) {
+      if (!ids.includes(photo.photographer_id))
+        results.push({ name: photo.photographer, id: photo.photographer_id });
+      ids.push(photo.photographer_id);
+    }
+    return results;
+  }, [response, isVeiwingFavorites, allFavorites]);
 
   const searchedPhotos = useFilterData(response, [
     (photo) =>
