@@ -17,6 +17,7 @@ import useParams from "@/hooks/useParams.ts";
 import useFetch from "@/hooks/useFetch.ts";
 import { usePhotosContext } from "@/context/photosContext.tsx";
 import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes.ts";
 
 const Container = styled(motion.div)`
   position: relative;
@@ -94,9 +95,7 @@ const PhotoItem: FC<{
 
   const viewDetails = () => setParams(PARAMS.PHOTO_ID, props.photo?.id);
   const filterByAuthor = () =>
-    push(
-      `${location.pathname}?${PARAMS.AUTHOR_ID}=${props.photo.photographer_id}`
-    );
+    push(`${ROUTES.HOME}?${PARAMS.AUTHOR_ID}=${props.photo.photographer_id}`);
 
   return (
     <AnimatePresence>
