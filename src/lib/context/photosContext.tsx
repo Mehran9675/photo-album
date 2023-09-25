@@ -19,12 +19,13 @@ import PhotoItem from "@/components/ui/photoItem.tsx";
 import { AnimatePresence } from "framer-motion";
 
 interface PhotosContext {
+  renderPhotos: (data: ImageDetails[]) => ReactNode[];
   addToFavorites: (id: number) => () => void;
   authors: { name: string; id: number }[];
+  selectedPhoto: ImageDetails | null;
   favorites: ImageDetails[];
   favoritesCache: number[];
   photos: ImageDetails[];
-  renderPhotos: (data: ImageDetails[]) => ReactNode[];
   isFetching: boolean;
   next: () => void;
 }
@@ -34,8 +35,10 @@ export const usePhotosContext = () => useContext(PhotosContextInstance);
 
 const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
   const [params] = useParams();
-  const { response, isFetching } = useFetch<ImageDetails>(END_POINTS.IMAGES);
-  const { allData, next, values } = usePagination<ImageDetails>(
+  const { response, isFetching } = useFetch<ImageDetails[]>(END_POINTS.IMAGES, {
+    defaultValue: [],
+  });
+  const { next, values } = usePagination<ImageDetails>(
     response as ImageDetails[]
   );
   const [favoritesCache, setFavoritesCache] = useLocalStorage({
@@ -44,20 +47,27 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
   });
   const isSearching = !!(params[PARAMS.SEARCH] || params[PARAMS.AUTHOR_ID]);
 
+  const selectedPhoto = useMemo(() => {
+    if (!response) return null;
+    return response.filter(
+      (photo) => photo.id.toString() === params[PARAMS.PHOTO_ID]
+    )[0];
+  }, [params, response]);
+
   const authors = useMemo(() => {
     const ids = [];
     const results = [];
-    for (const photo of allData) {
+    for (const photo of response) {
       if (!ids.includes(photo.photographer_id))
         results.push({ name: photo.photographer, id: photo.photographer_id });
       ids.push(photo.photographer_id);
     }
     return results;
-  }, [allData]);
+  }, [response]);
 
   const allFavorites = useMemo(
-    () => allData.filter((photo) => favoritesCache.includes(photo.id)),
-    [allData, favoritesCache]
+    () => response.filter((photo) => favoritesCache.includes(photo.id)),
+    [response, favoritesCache]
   );
 
   const favorites = useFilterData(allFavorites, [
@@ -67,7 +77,7 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
         .includes((params[PARAMS.SEARCH] || "").toLowerCase()),
   ]);
 
-  const searchedPhotos = useFilterData(allData, [
+  const searchedPhotos = useFilterData(response, [
     (photo) =>
       photo.alt
         .toLowerCase()
@@ -77,6 +87,12 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
         ? photo.photographer_id.toString() === params[PARAMS.AUTHOR_ID]
         : true,
   ]);
+
+  const photos = useMemo(() => {
+    const result = [...(isSearching ? searchedPhotos : values)];
+    if (selectedPhoto) result.push(selectedPhoto);
+    return result;
+  }, [selectedPhoto, searchedPhotos, values, isSearching]);
 
   const addToFavorites = (id: number) => () => {
     if (favoritesCache.includes(id))
@@ -96,10 +112,9 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
         <>
           <PhotoItem
             isFavorite={favoritesCache.includes(photo.id)}
-            addToFavorites={addToFavorites(photo.id)}
             animationDelay={animationDelay}
-            isSelected={selected}
             layoutID={photo.id.toString()}
+            isSelected={selected}
             key={photo.id}
             photo={photo}
           />
@@ -107,10 +122,9 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
             {selected && (
               <PhotoItem
                 isFavorite={favoritesCache.includes(photo.id)}
-                addToFavorites={addToFavorites(photo.id)}
                 animationDelay={animationDelay}
-                isSelected={selected}
                 layoutID={params[PARAMS.PHOTO_ID]}
+                isSelected={selected}
                 key={photo.id}
                 photo={photo}
               />
@@ -126,13 +140,14 @@ const PhotosContextProvider: FC<HTMLProps<HTMLDivElement>> = (props) => {
   return (
     <PhotosContextInstance.Provider
       value={{
-        photos: isSearching ? searchedPhotos : values,
         favoritesCache,
         addToFavorites,
+        selectedPhoto,
         renderPhotos,
         isFetching,
         favorites,
         authors,
+        photos,
         next,
       }}
     >

@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react";
 
+type Value<T> = T extends Blob
+  ? Blob
+  : T extends Response
+  ? Response
+  : T | null;
 export interface UseFetchResponse<R> {
   error: boolean;
-  response: R[] | null | Blob | Response;
+  response: Value<R>;
   isFetching: boolean;
-  get: () => Promise<R[] | null | Blob | Response>;
+  get: () => Promise<Value<R>>;
 }
 
 interface Config {
+  defaultValue?: any;
   shouldFetch?: boolean;
-  responseType:
+  responseType?:
     | "json"
     | "blob"
     | "text"
@@ -24,7 +30,7 @@ const DEFAULT_CONFIG: Config = {
 
 const RESPONSE: Record<
   Config["responseType"],
-  (data: Response) => Promise<any>
+  (data: Response) => Promise<Value<any>>
 > = {
   json: async (data) => await data.json(),
   blob: async (data) => await data.blob(),
@@ -38,8 +44,10 @@ const useFetch = <T>(
   endPoint: string,
   configuration?: Config
 ): UseFetchResponse<T> => {
-  const config = configuration || DEFAULT_CONFIG;
-  const [values, setData] = useState<T[] | null | Blob | Response>(null);
+  const config = { ...DEFAULT_CONFIG, ...configuration };
+  const [response, setResponse] = useState<Value<T>>(
+    config.defaultValue || null
+  );
   const [isFetching, setIsFetching] = useState(config.shouldFetch !== false);
   const [error, setError] = useState(false);
 
@@ -53,9 +61,10 @@ const useFetch = <T>(
       setIsFetching(true);
       const res = await fetch(endPoint);
       const data = await RESPONSE[config.responseType](res);
-      setData(data);
+      setResponse(data);
       return data;
     } catch (e) {
+      console.error(e);
       setError(true);
       setIsFetching(false);
     } finally {
@@ -65,7 +74,7 @@ const useFetch = <T>(
 
   return {
     get: () => get(endPoint),
-    response: values || [],
+    response,
     isFetching,
     error,
   } as const;

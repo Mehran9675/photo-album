@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 export interface UsePaginationResponse<T> {
   next: () => void;
   values: T[];
-  allData: T[];
 }
 
 interface Config {
@@ -60,6 +59,6 @@ const usePagination = <T = null>(
     setPage((page) => page + 1);
   };
 
-  return { values, next, allData: data } as const;
+  return { values, next } as const;
 };
 export default usePagination;

@@ -15,6 +15,9 @@ import stopPropagation from "@/functions/stopPropagation.ts";
 import PARAMS from "@/constants/params.ts";
 import useParams from "@/hooks/useParams.ts";
 import useFetch from "@/hooks/useFetch.ts";
+import { usePhotosContext } from "@/context/photosContext.tsx";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes.ts";
 
 const Container = styled(motion.div)`
   position: relative;
@@ -68,28 +71,31 @@ const Footer = styled("footer")`
 `;
 
 const PhotoItem: FC<{
-  photo: ImageDetails;
   animationDelay: number;
   isFavorite: boolean;
-  addToFavorites: () => void;
   isSelected: boolean;
   layoutID: string;
+  photo: ImageDetails;
 }> = (props) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setParams] = useParams();
-  const { isFetching, get } = useFetch(props.photo.src.original, {
+  const push = useNavigate();
+  const { addToFavorites } = usePhotosContext();
+  const { isFetching, get } = useFetch<Blob>(props.photo?.src?.original, {
     shouldFetch: false,
     responseType: "blob",
   });
-
   const unSelect = (event: SyntheticEvent) => {
     event.stopPropagation();
     setParams(PARAMS.PHOTO_ID, null);
   };
   const download = async () => {
-    FileSaver.saveAs((await get()) as Blob);
+    FileSaver.saveAs(await get());
   };
 
-  const viewDetails = () => setParams(PARAMS.PHOTO_ID, props.photo.id);
+  const viewDetails = () => setParams(PARAMS.PHOTO_ID, props.photo?.id);
+  const filterByAuthor = () =>
+    push(`${ROUTES.HOME}?${PARAMS.AUTHOR_ID}=${props.photo.photographer_id}`);
 
   return (
     <AnimatePresence>
@@ -99,15 +105,10 @@ const PhotoItem: FC<{
         onClick={viewDetails}
         initial={{ opacity: 0 }}
         exit={{ opacity: 0 }}
+        whileHover={!props.isSelected && { scale: 1.05, zIndex: 1 }}
         animate={{
           opacity: 1,
         }}
-        whileHover={
-          !props.isSelected && {
-            scale: 1.05,
-            zIndex: 1,
-          }
-        }
         transition={
           !props.isSelected && {
             duration: 0.2,
@@ -118,24 +119,31 @@ const PhotoItem: FC<{
         {props.isSelected && (
           <IconButton
             onClick={unSelect}
-            sx={{ position: "absolute", right: "0", color: "white" }}
+            sx={{
+              position: "absolute",
+              right: "0",
+              color: "white",
+              background: "rgba(0,0,0,0.2)",
+            }}
             aria-label="close"
           >
             <CancelIcon />
           </IconButton>
         )}
         <img
-          alt={props.photo.alt}
+          alt={props.photo?.alt}
           width={props.isSelected ? "100%" : "280"}
           height={props.isSelected ? "auto" : "200"}
           loading="eager"
           src={
-            props.isSelected ? props.photo.src.landscape : props.photo.src.tiny
+            props.isSelected
+              ? props.photo?.src?.landscape
+              : props.photo?.src?.tiny
           }
         />
         <Footer data-selected={props.isSelected}>
           <div onClick={stopPropagation}>
-            <IconButton onClick={props.addToFavorites}>
+            <IconButton onClick={addToFavorites(props.photo?.id)}>
               <FavoriteIcon color={props.isFavorite ? "error" : undefined} />
             </IconButton>
             <IconButton onClick={download}>
@@ -146,8 +154,12 @@ const PhotoItem: FC<{
               )}
             </IconButton>
             {props.isSelected && (
-              <Typography variant="body2">
-                Author: {props.photo.photographer}
+              <Typography
+                onClick={filterByAuthor}
+                sx={{ textDecoration: "underline" }}
+                variant="body2"
+              >
+                By: {props.photo?.photographer}
               </Typography>
             )}
           </div>
@@ -156,7 +168,7 @@ const PhotoItem: FC<{
             noWrap
             variant="body2"
           >
-            {props.photo.alt}
+            {props.photo?.alt}
           </Typography>
         </Footer>
       </Container>
