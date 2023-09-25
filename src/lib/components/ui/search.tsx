@@ -34,7 +34,7 @@ const Search = () => {
   const [params, setParams] = useParams();
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) =>
-    setTimeout(() => setParams(PARAMS.SEARCH, event.target.value), 500);
+    setTimeout(() => setParams(PARAMS.SEARCH, event.target.value), 1000);
 
   const handleClear = () => setParams(PARAMS.SEARCH, null);
 
